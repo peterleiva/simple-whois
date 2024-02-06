@@ -7,25 +7,33 @@ IANA_WHOIS_SERVER = "whois.iana.org"
 
 def _get_refer_server(res):
     try:
-        founded = re.findall(r'refer:\s*(.+)\n', res)[0]
-        return founded
+        return re.findall(r'refer:\s*(.+)\n', res)[0]
     except IndexError:
         return None
 
 def query(target, server = IANA_WHOIS_SERVER, port = WHOIS_PORT):
     whois_ip_addr = utils.find_ip(server)
-    print(f"found IP {whois_ip_addr}")
 
     conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn.connect((whois_ip_addr, port))
 
     conn.send(f"{target}\r\n".encode())
 
-    res = conn.recv(4 * 2**10).decode()
+    res = ''
+
+    while True:
+        data = conn.recv(4 * 2**10)
+        if not data:
+            break
+        res += data.decode('utf-8', 'ignore')
+
     conn.close()
 
-    # while _get_refer_server(res) is not None:
-    #     print("refer at", _get_refer_server(res))
-    #     res += query(target, server=_get_refer_server(res))
+    refer = _get_refer_server(res)
 
-    return res
+    if not refer:
+        return res
+    
+    res += f"# {refer} \n\n"
+
+    return res + query(target, refer, port)
