@@ -1,6 +1,5 @@
 import utils
 import socket
-import re
 
 WHOIS_PORT = 43
 IANA_WHOIS_SERVER = "whois.iana.org"
